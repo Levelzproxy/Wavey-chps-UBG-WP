@@ -1,0 +1,16 @@
+{
+  "name": "wavey-chps",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Wavey chps proxy: Scramjet 2 + libcurl client with its own Wisp relay",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "start": "node server.js"
+  },
+  "dependencies": {
+    "@mercuryworkshop/wisp-js": "^0.5.3"
+  }
+}
