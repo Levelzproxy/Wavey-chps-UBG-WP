@@ -2,12 +2,12 @@
 // Deploy this folder to Render (free web service works), Railway, Fly or a VPS.
 //
 // It does two jobs:
-//   1. serves the proxy files in ./public over HTTPS with COOP/COEP headers
+//   1. serves the proxy files in ./public over HTTPS
 //   2. runs the Wisp endpoint at /wisp/ (WebSocket upgrade)
 //
-// Because it serves both, the proxy is same-origin with its relay: no CORS,
-// no cross-site WebSocket issues, and the page is cross-origin isolated, so
-// sites that need SharedArrayBuffer (games, editors, wasm tools) work too.
+// Because it serves both, the proxy is same-origin with its relay: no CORS
+// and no cross-site WebSocket issues. It deliberately sends no COOP/COEP, so
+// the Games/GBA/AI iframes can embed third-party pages normally.
 //
 // You can still upload ./public to GitHub Pages and use this only as a relay:
 // put wss://<your-app>.onrender.com/wisp/ in Wavey chps → Settings → Tunnel.
@@ -39,9 +39,9 @@ const MIME = {
 
 function headersFor(file) {
   const h = {
-    // Cross-origin isolation: passed through to proxied pages by Scramjet.
-    "cross-origin-opener-policy": "same-origin",
-    "cross-origin-embedder-policy": "require-corp",
+    // No COOP/COEP here on purpose. Cross-origin isolation blocks the Games/GBA/AI
+    // iframes (they don't send Cross-Origin-Resource-Policy), and the original static
+    // site never had those headers either. Scramjet still works without them.
     "access-control-allow-origin": "*",
   };
   const ext = path.extname(file).toLowerCase();
