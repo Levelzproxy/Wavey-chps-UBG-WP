@@ -24,7 +24,6 @@
     { name: 'chps and Tobnyi',        role: 'Design / testing / ideas',           url: '' },
     { name: 'Tobnyi',                role: 'Meld — our partner',                 url: 'http://meld-gzpp.onrender.com/' },
     { name: 'Inter & Sora',          role: 'Fonts (Google Fonts)',               url: 'https://fonts.google.com/' },
-    { name: 'AllOrigins, corsproxy.io, cors.eu.org and friends', role: 'Free public relays that load pages', url: '' },
     { name: 'GBA Games', role: 'The GBA games page (gba-sfum.vercel.app)', url: 'https://gba-sfum.vercel.app/' }
   ];
   // Shown under the heading "Wisp tunnel" in the Credits frame (same format as above).
@@ -104,35 +103,9 @@
     wiki:  { name: 'Wikipedia',  url: 'https://en.wikipedia.org/w/index.php?search=%s' }
   };
 
-  // Public relays. {enc} = URL-encoded target, {raw} = target appended as-is.
-  //   field   → relay answers with JSON and the page lives in that field
-  //   lossy   → relay truncates big pages (used only after the others)
-  //   rendered→ page is rendered server-side (scripts are dropped)
-  //   archive → last-resort copy from the Internet Archive
-  const RELAYS = [
-    // Wisp tunnel: the browser opens its own TLS connection to the site through a Wisp server (libcurl.js, WebAssembly).
-    // No CORS limits, no size cap, real headers. The Wisp server only ever sees encrypted bytes.
-    { id: 'wisp',         name: 'Wisp tunnel',              tpl: '', wisp: true },
-    { id: 'allorigins',   name: 'AllOrigins',               tpl: 'https://api.allorigins.win/raw?url={enc}' },
-    { id: 'aojson',       name: 'AllOrigins (JSON)',        tpl: 'https://api.allorigins.win/get?url={enc}', field: 'contents' },
-    { id: 'aohex',        name: 'AllOrigins mirror',        tpl: 'https://api.allorigins.hexlet.app/raw?url={enc}' },
-    { id: 'aohexj',       name: 'AllOrigins mirror (JSON)', tpl: 'https://api.allorigins.hexlet.app/get?url={enc}', field: 'contents' },
-    { id: 'corsproxy',    name: 'corsproxy.io',             tpl: 'https://corsproxy.io/?url={enc}' },
-    { id: 'corsproxyorg', name: 'corsproxy.org',            tpl: 'https://corsproxy.org/?{enc}' },
-    { id: 'euorg',        name: 'cors.eu.org',              tpl: 'https://cors.eu.org/{raw}' },
-    { id: 'corslol',      name: 'cors.lol',                 tpl: 'https://api.cors.lol/?url={enc}' },
-    { id: 'corsfix',      name: 'Corsfix',                  tpl: 'https://proxy.corsfix.com/?{raw}' },
-    { id: 'corsdev',      name: 'cors.dev',                 tpl: 'https://proxy.cors.dev/{raw}' },
-    { id: 'x2u',          name: 'cors.x2u.in',              tpl: 'https://cors.x2u.in/{raw}' },
-    { id: 'azm',          name: 'CORS Anywhere (Workers)',  tpl: 'https://cors-anywhere.azm.workers.dev/{raw}' },
-    { id: 'zibri',        name: 'cors.workers.dev',         tpl: 'https://test.cors.workers.dev/?{raw}' },
-    { id: 'yacdn',        name: 'YaCDN',                    tpl: 'https://yacdn.org/proxy/{raw}' },
-    { id: 'htmldriven',   name: 'HTMLDriven',               tpl: 'https://cors-proxy.htmldriven.com/?url={enc}', field: 'body' },
-    { id: 'thingproxy',   name: 'ThingProxy',               tpl: 'https://thingproxy.freeboard.io/fetch/{raw}', lossy: true },
-    // Renders the page in a real browser on the server, so it often succeeds where plain relays are refused.
-    { id: 'reader',       name: 'Reader',                   tpl: 'https://r.jina.ai/{raw}', headers: { 'X-Respond-With': 'html' }, rendered: true },
-    { id: 'wayback',      name: 'Internet Archive copy',    tpl: 'https://web.archive.org/web/2099id_/{raw}', archive: true }
-  ];
+  // Public CORS relays are disabled on purpose: the app browses only through
+  // Scramjet, over its own Wisp relay at /wisp/ on this domain.
+  const RELAYS = [];
 
   const DEFAULT_SITES = [
     { title: 'Wikipedia',   url: 'https://en.wikipedia.org/' },
@@ -939,8 +912,8 @@ export default {
     let res;
     try { res = await fetchViaRelays(url, relays, signal); } catch (e) {
       if (e.name === 'AbortError' || token !== t.nav) throw e;
-      if (fallback) { toast('Public relays failed — switching to the hosted proxy', 'warn'); return loadHosted(t, url, token); }
-      throw new Error((mode === 'custom' ? '' : 'None of the public relays could load this page — they are often rate-limited or refuse big sites. ') + e.message);
+      if (fallback) { toast('The relay failed — switching to the hosted proxy', 'warn'); return loadHosted(t, url, token); }
+      throw new Error((mode === 'custom' ? '' : 'The relay could not load this page — it may be down or refusing large sites. ') + e.message);
     }
     if (token !== t.nav) return;
     if (res.binary) { t.relay = res.relay.name; setFrameSrc(t, url, true); return; }
@@ -1239,14 +1212,10 @@ export default {
     const engines = [['relay', 'Relay'], ['direct', 'Direct'], ['hosted', 'Hosted'], ['custom', 'My Worker']];
     const engDesc = {
       hosted: 'Always opens your hosted proxy (below) inside Wavey.',
-      relay: 'Scramjet 2 + libcurl: real pages in a frame through a Wisp relay, with automatic relay fallback.',
+      relay: 'Scramjet 2 + libcurl: real pages in a frame through this site’s own Wisp relay. No public relays, no fallback.',
       direct: 'Loads the site in a plain frame. Fast, but any site that forbids embedding will show blank.',
       custom: 'Uses only the relay URLs you list below — your own Cloudflare Worker is the most reliable option.'
     };
-    const relays = RELAYS.map((r) => `
-      <div class="relay"><div class="nfo"><b>${esc(r.name)}</b><small>${r.wisp ? 'end-to-end encrypted tunnel · no CORS limits' : esc(hostOf(r.tpl))}${r.rendered ? ' · renders JS' : r.archive ? ' · archived copy' : r.lossy ? ' · small pages only' : ''}</small></div>
-        <span class="rstat" data-rs="${r.id}"></span>
-        <label class="switch"><input type="checkbox" data-relay="${r.id}" ${S.disabledRelays.includes(r.id) ? '' : 'checked'}><i></i></label></div>`).join('');
     const search = Object.entries(SEARCH).map(([k, v]) => `<option value="${k}" ${S.search === k ? 'selected' : ''}>${v.name}</option>`).join('');
     return `
       ${accountHtml()}
@@ -1264,21 +1233,15 @@ export default {
           <small>${engDesc[S.engine]}</small></div>
         <div class="field"><div class="lbl">Search engine</div><select data-key="search" aria-label="Search engine">${search}</select>
           <small>Google often refuses relays. DuckDuckGo and Brave are the safest bets.</small></div>
-        <div class="field"><div class="lbl"><span>Public relays (${RELAYS.length})</span><button class="btn sm" data-act="test-relays">Test all</button></div>
-          <small>The fastest healthy relays go first, several at once; broken ones rest automatically. “Test all” checks every relay in parallel (a few seconds).</small>${relays}</div>
         <div class="field"><div class="lbl">Your own relay URLs</div>
           <textarea data-key="customRelay" spellcheck="false" placeholder="https://my-relay.workers.dev/?url=">${esc(S.customRelay)}</textarea>
           <small>Paste as many as you like — one per line (they are tried first). Use <code>{enc}</code> or <code>{raw}</code> where the page address goes; if omitted, it is appended URL-encoded. See About for a 20-line Worker.</small></div>
-        <div class="field"><div class="lbl">Wisp server</div>
-          <input type="text" data-key="wisp" value="${esc(S.wisp)}" placeholder="Built-in list of public servers (leave empty)" spellcheck="false" aria-label="Wisp server address">
-          <small>Powers the “Wisp tunnel” relay: your browser connects to sites itself (end-to-end encrypted) through a Wisp server, so no CORS relay is needed. Several public servers are built in and tried in turn. To use your own, paste one or more <code>wss://</code> addresses here (separated by spaces).</small></div>
-        ${sw('wispOff', 'Turn the Wisp tunnel off', 'Never use the Wisp tunnel.', S.wispOff)}
         <div class="field"><div class="lbl"><span>Scramjet relays</span><button class="btn sm" data-act="sj-test">Test all</button></div>
-          <small>The engine tries these in parallel, prefers the one on this domain, and falls back to the built-in public list. “Use” pins one right now.</small>${sjRows()}</div>
+          <small>Only this domain’s relay (/wisp/) is used — no public fallbacks. “Test all” checks it, and “Use” pins it.</small>${sjRows()}</div>
         <div class="field"><div class="lbl">Hosted proxy</div>
           <input type="text" data-key="hosted" value="${esc(S.hosted)}" placeholder="https://your-proxy.example/" spellcheck="false" aria-label="Hosted proxy address">
-          <small>Shown inside Wavey when the public relays fail. A bare address opens that proxy’s own page (Wavey copies the site address for you to paste). If you know its URL pattern, use <code>{enc}</code>, <code>{b64}</code>, <code>{uv}</code> or <code>{raw}</code> — e.g. <code>https://host/service/{uv}</code>. Whoever runs a hosted proxy can see what is loaded through it.</small></div>
-        ${sw('hostedAuto', 'Use the hosted proxy automatically', 'When every public relay fails, fall back to it.', S.hostedAuto)}
+          <small>Shown inside Wavey when the relay fails. A bare address opens that proxy’s own page (Wavey copies the site address for you to paste). If you know its URL pattern, use <code>{enc}</code>, <code>{b64}</code>, <code>{uv}</code> or <code>{raw}</code> — e.g. <code>https://host/service/{uv}</code>. Whoever runs a hosted proxy can see what is loaded through it.</small></div>
+        ${sw('hostedAuto', 'Use the hosted proxy automatically', 'When the Scramjet relay fails, fall back to it.', S.hostedAuto)}
         ${sw('restore', 'Restore tabs on launch', 'Reopen the tabs you had last time.', S.restore)}
       </div>
       <div class="group"><h3>Privacy</h3>
@@ -1300,15 +1263,15 @@ export default {
     return `<div class="prose">
       <p><b style="color:var(--text)">Wavey chps</b> v.${VERSION} — a glassy, browser-style portal that lives entirely in three static files.</p>
       <h4>How it works</h4>
-      <p>In <b>Relay</b> mode a public relay fetches the page for you, Wavey rewrites it (base URL, links, forms, storage and fetch calls) and shows it in a sandboxed frame. Links and searches stay inside Wavey, and the page can’t touch this site’s data.</p>
+      <p>In <b>Relay</b> mode Scramjet 2 loads the page through this site’s own Wisp relay at <code>/wisp/</code> and rewrites it (base URL, links, forms, storage and fetch calls) inside a sandboxed frame. Links and searches stay inside Wavey, and the page can’t touch this site’s data. No public relays are used.</p>
       <h4>Honest limits</h4>
       <ul>
         <li>Heavy web apps (YouTube, Google, Discord, streaming) usually won’t work through a static relay.</li>
-        <li>Public relays can be slow, rate-limited or go offline — use <b>Test all</b> in Settings.</li>
+        <li>Everything goes through this site’s own Wisp relay at <code>/wisp/</code> — there are no public relay fallbacks.</li>
         <li>Only GET requests are relayed; sign-in forms are blocked on purpose.</li>
         <li><b>Hosted</b> mode shows a proxy site inside Wavey. It is used automatically when every relay fails, and whoever runs it can see what is loaded through it.</li>
       </ul>
-      <p class="warn">Never type passwords or payment details into a page loaded through a public relay — the relay can read it.</p>
+      <p class="warn">Never type passwords or payment details into a proxied page — whoever runs the relay can read it.</p>
       <h4>Most reliable: your own free relay</h4>
       <p>Create a Cloudflare Worker, paste this in, deploy, then add <code>https://your-worker.workers.dev/?url=</code> under Settings → Your own relay URLs.</p>
       <pre id="workerCode">${esc(WORKER_SNIPPET)}</pre>
@@ -1559,7 +1522,7 @@ export default {
       case 'ready': if (t.pending) { t.pending = 0; finishLoad(t); } break;
       case 'css': if (typeof d.href === 'string') fetchCss(t, d.href); break;
       case 'blank': handleBlank(t); break;
-      case 'blocked': toast('Sign-in forms are blocked in Relay mode — a public relay could read your password.', 'warn', 5200); break;
+      case 'blocked': toast('Sign-in forms are blocked in Relay mode — the relay could read your password.', 'warn', 5200); break;
     }
   });
 
@@ -3007,11 +2970,8 @@ export default {
   const sjSameHost = () => (location.protocol === 'https:' ? 'wss://' : 'ws://') + location.host + '/wisp/';
 
   function sjCandidates() {
-    const list = [];
-    // Our own Render server, if this page is served by it.
-    list.push(sjSameHost());
-    // Whatever is typed in Settings → Wisp server, else the built-in public list.
-    try { (wispServers() || []).forEach((u) => list.push(u)); } catch { /* not ready */ }
+    // Only this domain's own relay. No public Wisp servers, no fallbacks.
+    const list = [sjSameHost()];
     if (sjActive) list.unshift(sjActive);
     return [...new Set(list.filter(Boolean))];
   }
