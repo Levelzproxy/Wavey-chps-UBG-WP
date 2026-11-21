@@ -403,7 +403,7 @@ kbd {
 .viewport[data-page='tools'] #page-tools,
 .viewport[data-page='apps'] #page-apps,
 .viewport[data-page='partners'] #page-partners { display: block; }
-.viewport:not([data-page='browser']) :is(.home, .frames, .errorview, .hostbar) { display: none !important; }
+.viewport:not([data-page='browser']) :is(.home, .frames, .errorview) { display: none !important; }
 .wrap, .ph { max-width: 1100px; margin-left: auto; margin-right: auto; }
 .ph { margin-bottom: 20px; }
 .ph h1 { font-family: var(--display); font-size: clamp(28px, 5vw, 40px); letter-spacing: -0.02em; }
@@ -485,11 +485,6 @@ kbd {
 .acard .side { position: absolute; right: 8px; top: 50%; transform: translateY(-50%); display: flex; opacity: 0; border-radius: 10px; background: rgba(18, 11, 33, 0.92); transition: opacity 0.15s; }
 .acard:hover .side, .acard:focus-within .side { opacity: 1; }
 @media (hover: none) { .acard .side { opacity: 1; } }
-
-/* ---------- Hosted-proxy hint ---------- */
-.hostbar { position: absolute; left: 50%; bottom: 14px; transform: translateX(-50%); z-index: 4; display: none; align-items: center; gap: 10px; max-width: calc(100% - 24px); padding: 8px 8px 8px 14px; border-radius: 999px; font-size: 12.5px; background: rgba(20, 13, 36, 0.92); border: 1px solid rgba(var(--accent-rgb), 0.5); box-shadow: var(--shadow); -webkit-backdrop-filter: blur(16px); backdrop-filter: blur(16px); }
-.hostbar.show { display: flex; }
-.hostbar b { color: var(--accent); font-weight: 600; word-break: break-all; }
 
 /* ---------- Footer gear + settings frame ---------- */
 .foot { display: flex; align-items: center; justify-content: space-between; flex: none; height: 24px; padding: 0 4px; color: var(--faint); font-size: 11px; }
@@ -651,7 +646,7 @@ html.glow-on .bg .glow { opacity: 1; }
 .swatch .pal { font-style: normal; display: grid; place-items: center; height: 100%; color: #fff; font-size: 15px; text-shadow: 0 1px 4px rgba(0, 0, 0, 0.5); }
 @media (max-width: 640px) { .online span { display: none; } .online { padding: 0 11px 0 10px; } .foot-btn { padding: 0 6px; } }
 
-/* ---------- v1.03: games dropdown, hosted picker, coming-soon, info pop-up ---------- */
+/* ---------- v1.03: games dropdown, coming-soon, info pop-up ---------- */
 .pn .chev { width: 13px; height: 13px; margin-left: -2px; opacity: 0.8; transition: transform 0.2s; }
 .pn[aria-expanded='true'] .chev { transform: rotate(180deg); }
 .gmenu { top: 0; right: auto; left: 0; width: 190px; z-index: 60; }
@@ -659,11 +654,6 @@ html.glow-on .bg .glow { opacity: 1; }
 .viewport[data-page='cloud'] #page-soon, .viewport[data-page='single'] #page-soon { display: flex; }
 .soon { margin: auto; text-align: center; padding: 40px 20px; }
 .soon h1 { font-family: var(--display); font-size: clamp(30px, 6vw, 54px); letter-spacing: -0.02em; }
-.hostbar { flex-wrap: wrap; justify-content: center; border-radius: 20px; padding: 10px 10px 10px 16px; row-gap: 8px; }
-.hostpick { display: flex; flex-wrap: wrap; gap: 6px; }
-.hostpick button { height: 28px; padding: 0 12px; border-radius: 999px; font-size: 12px; font-weight: 600; color: var(--muted); background: rgba(255, 255, 255, 0.07); border: 1px solid var(--line); transition: background 0.2s, color 0.2s; }
-.hostpick button:hover { color: var(--text); background: rgba(255, 255, 255, 0.13); }
-.hostpick button.on { color: #120a24; border-color: transparent; background: linear-gradient(135deg, var(--accent), var(--accent2)); }
 .foot-r { display: flex; align-items: center; gap: 4px; }
 .foot-info { width: 22px; height: 22px; display: grid; place-items: center; border-radius: 50%; color: var(--faint); transition: color 0.2s, background 0.2s; }
 .foot-info .i { width: 14px; height: 14px; }
