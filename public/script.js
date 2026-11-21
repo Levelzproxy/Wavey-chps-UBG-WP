@@ -37,13 +37,6 @@
     { name: 'Keystone (random-school-stuff)', role: 'Where the public Wisp server list was found',  url: 'https://github.com/random-school-stuff/keystone' },
     { name: 'TCMs-Proxy (the-creative-master)', role: 'Where the WebMC Wisp server was found',      url: 'https://github.com/the-creative-master/TCMs-Proxy' }
   ];
-  // Shown under the heading "Hosted proxies" in the Credits frame (same format as above).
-  const CREDITS_PROXIES = [
-    { name: 'Interstellar', role: 'Hosted proxy',  url: 'https://up4b.z20.web.core.windows.net/' },
-    { name: 'Zaka',         role: 'Hosted proxy',  url: 'https://morestuff.woodvilleweather.com/study.html' },
-    { name: 'Amethyst',     role: 'Hosted proxy',  url: 'https://amethyst.zone/browse' },
-    { name: 'Astral',       role: 'Hosted proxy',  url: 'https://storage.googleapis.com/astralubg/index.html' }
-  ];
 
   // 3) SIGN-IN. Works out of the box (nothing to set up): email + password accounts are saved in the visitor's own browser,
   //    and they can save / restore a backup file in Settings ▸ Account to move them to another device.
@@ -84,14 +77,6 @@
   const displayUrl = (u) => { try { const x = new URL(u); return x.host.replace(/^www\./, '') + (x.pathname + x.search + x.hash).replace(/\/$/, ''); } catch { return u; } };
 
   /* ═══════════════════════════ Constants ═══════════════════════════ */
-  const HOSTED_DEFAULT = 'https://up4b.z20.web.core.windows.net/';
-  // The choices shown as buttons whenever a page is opened with a hosted proxy.
-  const HOSTED_PROXIES = [
-    { name: 'Interstellar', url: HOSTED_DEFAULT },
-    { name: 'Zaka',         url: 'https://morestuff.woodvilleweather.com/study.html' },
-    { name: 'Amethyst',     url: 'https://amethyst.zone/browse' },
-    { name: 'Astral',       url: 'https://storage.googleapis.com/astralubg/index.html' }
-  ];
   const KEY = 'wavey.v1';
   let LOGO = '';
 
@@ -196,7 +181,7 @@ export default {
 
   const DEFAULTS = {
     theme: 'violet', fx: 'constellation', glow: true, cursor: true, cA: '#a78bfa', cB: '#ec4899', cBg: '#0b0613', engine: 'relay', search: 'ddg', glass: 22, motion: true, restore: true,
-    customRelay: '', disabledRelays: [], lastRelay: '', hosted: HOSTED_DEFAULT, hostedAuto: true,
+    customRelay: '', disabledRelays: [], lastRelay: '',
     wisp: '', wispOff: false, cloakTitle: '', cloakIcon: '', panicKey: '`', panicUrl: 'https://www.wikipedia.org/'
   };
   const data = { settings: { ...DEFAULTS }, bookmarks: [], history: [], visits: {}, hidden: [], session: [], apps: [], pinned: [] };
@@ -211,7 +196,7 @@ export default {
       if (S.wisp === 'wss://wisp.webmc.fun/') S.wisp = ''; // older default → use the built-in list
       if (!THEMES[S.theme]) S.theme = 'violet';
       if (!SEARCH[S.search]) S.search = 'ddg';
-      if (!['relay', 'direct', 'custom', 'hosted'].includes(S.engine)) S.engine = 'relay';
+      if (!['relay', 'direct', 'custom'].includes(S.engine)) S.engine = 'relay';
       if (!Array.isArray(S.disabledRelays)) S.disabledRelays = [];
       if (Array.isArray(d.bookmarks)) data.bookmarks = d.bookmarks.filter((b) => b && isHttp(b.url));
       if (Array.isArray(d.history)) data.history = d.history.filter((h) => h && isHttp(h.url)).slice(0, 600);
@@ -823,7 +808,7 @@ export default {
     if (t.abort) t.abort.abort();
     t.nav++;
     clearTimeout(t.timer);
-    t.raw = null; t.url = null; t.error = null; t.loading = false; t.title = 'New Tab'; t.relay = ''; t.hostedFront = false;
+    t.raw = null; t.url = null; t.error = null; t.loading = false; t.title = 'New Tab'; t.relay = '';
     t.pending = 0;
     t.frame.removeAttribute('srcdoc');
     t.frame.src = 'about:blank';
@@ -879,7 +864,7 @@ export default {
     t.abort = ac;
     const token = ++t.nav;
     const mode = opts.forceMode || S.engine;
-    t.raw = null; t.error = null; t.url = url; t.loading = true; t.title = hostOf(url); t.relay = ''; t.hostedFront = false; t.counted = false; t.directMode = mode === 'direct';
+    t.raw = null; t.error = null; t.url = url; t.loading = true; t.title = hostOf(url); t.relay = ''; t.counted = false; t.directMode = mode === 'direct';
     if (opts.push !== false) pushEntry(t, url);
     else if (t.hist[t.idx]) t.hist[t.idx].url = url;
     refresh();
@@ -900,11 +885,8 @@ export default {
   }
 
   async function loadViaRelay(t, url, signal, token, hops, mode) {
-    if (mode === 'hosted') return loadHosted(t, url, token);
-    const fallback = !!(S.hosted && S.hostedAuto && mode !== 'custom');
     const relays = relayList(mode);
     if (!relays.length) {
-      if (fallback) return loadHosted(t, url, token);
       throw new Error(mode === 'custom'
         ? 'No custom relay is set yet. Add your Worker URL in Settings → Browsing.'
         : 'Every relay is switched off. Turn one on in Settings → Browsing.');
@@ -912,7 +894,6 @@ export default {
     let res;
     try { res = await fetchViaRelays(url, relays, signal); } catch (e) {
       if (e.name === 'AbortError' || token !== t.nav) throw e;
-      if (fallback) { toast('The relay failed — switching to the hosted proxy', 'warn'); return loadHosted(t, url, token); }
       throw new Error((mode === 'custom' ? '' : 'The relay could not load this page — it may be down or refusing large sites. ') + e.message);
     }
     if (token !== t.nav) return;
@@ -1017,7 +998,7 @@ export default {
     $('#forwardBtn').disabled = t.idx >= t.hist.length - 1;
     $('#reloadBtn').disabled = !t.url;
     const pill = $('#enginePillText');
-    pill.textContent = S.engine === 'direct' ? 'Direct' : S.engine === 'custom' ? 'My Worker' : S.engine === 'hosted' ? 'Hosted' : (t.relay && t.url ? 'Relay · ' + t.relay : 'Relay');
+    pill.textContent = S.engine === 'direct' ? 'Direct' : S.engine === 'custom' ? 'My Worker' : (t.relay && t.url ? 'Relay · ' + t.relay : 'Relay');
   }
 
   function updateView() {
@@ -1027,8 +1008,6 @@ export default {
     $('#errorView').classList.toggle('show', !!t.error);
     tabs.forEach((x) => x.frame.classList.toggle('active', x === t && !!x.url && !x.error));
     $('#loadbar').classList.toggle('on', t.loading);
-    $('#hostbar').classList.toggle('show', !!t.hostedFront && !!t.url && !t.error);
-    if (t.hostedFront && t.url) { $('#hostUrl').textContent = displayUrl(t.url); renderHostPick(); }
     if (t.error) {
       $('#errTitle').textContent = 'Couldn’t load this page';
       $('#errUrl').textContent = t.error.url;
@@ -1209,9 +1188,8 @@ export default {
     const ct = currentTheme();
     const custom = S.theme === 'custom' ? `<div class="cpick"><label>Accent<input type="color" data-key="cA" value="${ct.a}"></label><label>Glow<input type="color" data-key="cB" value="${ct.b}"></label><label>Background<input type="color" data-key="cBg" value="${ct.bg}"></label></div>` : '';
     const fxOpts = Object.entries(FX_MODES).map(([k, n]) => `<option value="${k}" ${S.fx === k ? 'selected' : ''}>${n}</option>`).join('');
-    const engines = [['relay', 'Relay'], ['direct', 'Direct'], ['hosted', 'Hosted'], ['custom', 'My Worker']];
+    const engines = [['relay', 'Relay'], ['direct', 'Direct'], ['custom', 'My Worker']];
     const engDesc = {
-      hosted: 'Always opens your hosted proxy (below) inside Wavey.',
       relay: 'Scramjet 2 + libcurl: real pages in a frame through this site’s own Wisp relay. No public relays, no fallback.',
       direct: 'Loads the site in a plain frame. Fast, but any site that forbids embedding will show blank.',
       custom: 'Uses only the relay URLs you list below — your own Cloudflare Worker is the most reliable option.'
@@ -1238,10 +1216,6 @@ export default {
           <small>Paste as many as you like — one per line (they are tried first). Use <code>{enc}</code> or <code>{raw}</code> where the page address goes; if omitted, it is appended URL-encoded. See About for a 20-line Worker.</small></div>
         <div class="field"><div class="lbl"><span>Scramjet relays</span><button class="btn sm" data-act="sj-test">Test all</button></div>
           <small>Only this domain’s relay (/wisp/) is used — no public fallbacks. “Test all” checks it, and “Use” pins it.</small>${sjRows()}</div>
-        <div class="field"><div class="lbl">Hosted proxy</div>
-          <input type="text" data-key="hosted" value="${esc(S.hosted)}" placeholder="https://your-proxy.example/" spellcheck="false" aria-label="Hosted proxy address">
-          <small>Shown inside Wavey when the relay fails. A bare address opens that proxy’s own page (Wavey copies the site address for you to paste). If you know its URL pattern, use <code>{enc}</code>, <code>{b64}</code>, <code>{uv}</code> or <code>{raw}</code> — e.g. <code>https://host/service/{uv}</code>. Whoever runs a hosted proxy can see what is loaded through it.</small></div>
-        ${sw('hostedAuto', 'Use the hosted proxy automatically', 'When the Scramjet relay fails, fall back to it.', S.hostedAuto)}
         ${sw('restore', 'Restore tabs on launch', 'Reopen the tabs you had last time.', S.restore)}
       </div>
       <div class="group"><h3>Privacy</h3>
@@ -1269,7 +1243,6 @@ export default {
         <li>Heavy web apps (YouTube, Google, Discord, streaming) usually won’t work through a static relay.</li>
         <li>Everything goes through this site’s own Wisp relay at <code>/wisp/</code> — there are no public relay fallbacks.</li>
         <li>Only GET requests are relayed; sign-in forms are blocked on purpose.</li>
-        <li><b>Hosted</b> mode shows a proxy site inside Wavey. It is used automatically when every relay fails, and whoever runs it can see what is loaded through it.</li>
       </ul>
       <p class="warn">Never type passwords or payment details into a proxied page — whoever runs the relay can read it.</p>
       <h4>Most reliable: your own free relay</h4>
@@ -1437,7 +1410,6 @@ export default {
     if (el.type === 'checkbox') S[k] = el.checked;
     else if (k === 'panicUrl') { const v = el.value.trim(); if (v && !isHttp(v)) { toast('Panic address must start with http(s)://', 'warn'); el.value = S.panicUrl; return; } S.panicUrl = v || DEFAULTS.panicUrl; }
     else if (k === 'wisp') { const v = el.value.split(/[\s,]+/).filter(Boolean); if (v.some((u) => !/^wss?:\/\//i.test(u))) { toast('Wisp server addresses must start with wss://', 'warn'); el.value = S.wisp; return; } S.wisp = v.join(' '); el.value = S.wisp; wispP = null; wispCur = ''; wispGood = ''; wispCool = {}; }
-    else if (k === 'hosted') { const v = el.value.trim(); if (v && !isHttp(v)) { toast('The hosted proxy address must start with http(s)://', 'warn'); el.value = S.hosted; return; } S.hosted = v; }
     else if (k === 'glass') S.glass = +el.value;
     else S[k] = el.value;
     save(); applyAll();
@@ -1466,16 +1438,12 @@ export default {
     } catch { /* style stays missing — nothing else to try */ }
   }
 
-  // The loaded page is still empty: simplified copy → Reader (server-rendered) → hosted proxy.
+  // The loaded page is still empty: simplified copy → Reader (server-rendered).
   async function handleBlank(t) {
     const R = t.raw;
     if (!R || R.busy || !t.url) return;
     R.busy = true;
     const token = t.nav;
-    const toHosted = () => {
-      if (S.hosted && S.hostedAuto && R.stage < 3) { R.stage = 3; toast('Still blank — opening it with the hosted proxy', 'info', 3600); loadHosted(t, R.url, token); return true; }
-      return false;
-    };
     try {
       if (R.stage === 0 && R.staticLen >= 250) {
         R.stage = 1;
@@ -1497,10 +1465,10 @@ export default {
         refresh();
         return;
       }
-      if (!toHosted()) toast('This site needs a full browser engine to draw. Try the Hosted engine in Settings.', 'warn', 6000);
+      toast('This site needs a full browser engine to draw, so it can’t be shown here. Try opening it in a real tab.', 'warn', 6000);
     } catch (e) {
       if (e.name === 'AbortError' || token !== t.nav) return;
-      if (!toHosted()) toast('This page is blank and could not be repaired.', 'warn', 5000);
+      toast('This page is blank and could not be repaired.', 'warn', 5000);
     } finally { R.busy = false; }
   }
 
@@ -1677,52 +1645,6 @@ export default {
   $('#errDirect').addEventListener('click', () => { const t = tab(); if (t && t.error) navigate(t, { url: t.error.url }, { push: false, forceMode: 'direct' }); });
   $('#errExternal').addEventListener('click', () => { const t = tab(); if (t && t.error) window.open(t.error.url, '_blank', 'noopener'); });
   $('#errSettings').addEventListener('click', () => toggleSettings(true));
-
-  /* ═══════════════════════════ Hosted proxy (fallback engine) ═══════════════════════════ */
-  function b64url(s) {
-    let bin = '';
-    new TextEncoder().encode(s).forEach((b) => { bin += String.fromCharCode(b); });
-    return btoa(bin).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
-  }
-  // Ultraviolet's default "xor" codec, for proxies whose URLs look like /service/<encoded>
-  function uvEncode(s) {
-    return encodeURIComponent(String(s).split('').map((c, i) => (i % 2 ? String.fromCharCode(c.charCodeAt(0) ^ 2) : c)).join(''));
-  }
-  const hostedHasSlot = (t) => /\{(enc|raw|b64|uv)\}/.test(t);
-  function hostedUrl(url) {
-    const t = String(S.hosted || '').trim();
-    if (!isHttp(t)) return '';
-    if (!hostedHasSlot(t)) return t;
-    return t.replace('{enc}', () => encodeURIComponent(url)).replace('{raw}', () => url)
-      .replace('{b64}', () => b64url(url)).replace('{uv}', () => uvEncode(url));
-  }
-  function loadHosted(t, url, token) {
-    const h = hostedUrl(url);
-    if (!h) throw new Error('No hosted proxy is set. Add one in Settings → Browsing.');
-    if (token !== t.nav) return;
-    t.relay = 'Hosted';
-    t.title = hostOf(url);
-    t.hostedFront = !hostedHasSlot(S.hosted);
-    setFrameSrc(t, h, true);
-    if (t.hostedFront) {
-      try { navigator.clipboard.writeText(url).catch(() => {}); } catch { /* noop */ }
-    }
-    refresh();
-  }
-  function renderHostPick() {
-    const cur = String(S.hosted || '').trim();
-    $('#hostPick').innerHTML = HOSTED_PROXIES.map((p) => `<button type="button" data-hp="${esc(p.url)}" class="${p.url === cur ? 'on' : ''}" aria-pressed="${p.url === cur}">${esc(p.name)}</button>`).join('');
-  }
-  $('#hostPick').addEventListener('click', (e) => {
-    const b = e.target.closest('[data-hp]');
-    if (!b) return;
-    S.hosted = b.dataset.hp; save();
-    renderHostPick();
-    const t = tab();
-    if (t && t.url) { try { loadHosted(t, t.url, t.nav); } catch (er) { toast(er.message, 'warn'); } }
-  });
-  $('#hostCopy').addEventListener('click', () => { const t = tab(); if (t && t.url) copyText(t.url); });
-  $('#hostClose').addEventListener('click', () => { const t = tab(); if (t) { t.hostedFront = false; updateView(); } });
 
   /* ═══════════════════════════ Settings frame (gear) ═══════════════════════════ */
   const sframe = $('#sframe'), sframeBody = $('#sframeBody'), gearBtn = $('#gearBtn');
@@ -2249,7 +2171,7 @@ export default {
     const root = $('#page-apps');
     if ($('#aGrid', root)) { fillApps(); return; }
     root.innerHTML = `<div class="wrap"><div class="ph"><h1>Apps</h1><p>Open sites inside Wavey. Click ↗ on a card to open it in a real tab instead.</p></div>
-      <p class="note">Heavy web apps (YouTube, Discord, now.gg, streaming sites) often need the <b>Hosted</b> engine in Settings, or a real tab — a plain relay can’t run everything.</p>
+      <p class="note">Heavy web apps (YouTube, Discord, now.gg, streaming sites) often need a real tab — a plain relay can’t run everything.</p>
       <div class="apps-top"><input class="search-in" id="aQ" type="text" placeholder="Search apps" aria-label="Search apps"></div>
       <form class="addapp" id="aForm" autocomplete="off"><input id="aName" type="text" placeholder="Name (optional)" aria-label="App name"><input id="aUrl" type="text" placeholder="Add your own app — paste a link" aria-label="App link"><button class="btn primary" type="submit">${icon('plus')}Add</button></form>
       <div id="aGrid"></div></div>`;
@@ -2295,8 +2217,7 @@ export default {
       return `<div class="credit"><span class="av" style="background:${avatarBg(c.name)}">${esc((c.name[0] || '?').toUpperCase())}</span><div class="tx"><b>${nm}</b><small>${esc(c.role || '')}</small></div></div>`;
     }).join('');
     cBody.innerHTML = (CREDITS_INTRO ? `<p class="credit-intro">${esc(CREDITS_INTRO)}</p>` : '') + `<div class="credit-list">${mk(CREDITS) || '<div class="panel-empty">No credits yet.</div>'}</div>`
-      + (CREDITS_WISP.length ? `<h3 class="credit-h">Wisp tunnel</h3><div class="credit-list">${mk(CREDITS_WISP)}</div>` : '')
-      + (CREDITS_PROXIES.length ? `<h3 class="credit-h">Hosted proxies</h3><div class="credit-list">${mk(CREDITS_PROXIES)}</div>` : '');
+      + (CREDITS_WISP.length ? `<h3 class="credit-h">Wisp tunnel</h3><div class="credit-list">${mk(CREDITS_WISP)}</div>` : '');
   }
   function toggleCredits(force) {
     const on = typeof force === 'boolean' ? force : !creditsOpen();
@@ -2952,7 +2873,7 @@ export default {
   /* ═══════════════════════════ Scramjet 2 engine ═══════════════════════════ */
   // The working proxy: Scramjet 2 (controller in the page) over libcurl, with a
   // Wisp relay that is health-checked and swapped when it dies. "Relay" mode
-  // uses this; Direct/Hosted/My Worker keep their original behaviour.
+  // uses this; Direct/My Worker keep their original behaviour.
   const SJ_PREFIX = new URL('~/sj/', location.href).pathname;
   const SJ_FILES = {
     scramjet: new URL('scramjet/scramjet.js', location.href).href,
