@@ -1689,7 +1689,7 @@ export default {
     else if (p === 'tools') renderTools();
     else if (p === 'apps') renderApps();
     else updateView();
-    const sc = $('#page-' + (FRAME_PAGES.includes(p) ? 'games' : (p === 'cloud' || p === 'single') ? 'soon' : p));
+    const sc = $('#page-' + (FRAME_PAGES.includes(p) ? 'games' : p === 'cloud' ? 'soon' : p));
     if (sc && !FRAME_PAGES.includes(p)) sc.scrollTop = 0;
   }
   $('#pagenav').addEventListener('click', (e) => {
