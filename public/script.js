@@ -11,7 +11,7 @@
      ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
   // 1) RELEASE VERSION — shown at the bottom right as "Wavey chps v.<VERSION>".
-  const VERSION = '1.02';
+  const VERSION = '1.06';
 
   // 2) CREDITS — shown when someone presses the "Credits" button (bottom left, next to the gear).
   //    Each credit is one line:  { name: 'Who', role: 'What they did', url: 'https://optional-link' }
