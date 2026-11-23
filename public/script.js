@@ -11,7 +11,7 @@
      ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
   // 1) RELEASE VERSION — shown at the bottom right as "Wavey chps v.<VERSION>".
-  const VERSION = '1.06';
+  const VERSION = '1.07';
 
   // 2) CREDITS — shown when someone presses the "Credits" button (bottom left, next to the gear).
   //    Each credit is one line:  { name: 'Who', role: 'What they did', url: 'https://optional-link' }
@@ -1698,7 +1698,7 @@ export default {
     if (b.dataset.drop) { e.stopPropagation(); gmenuOpen() ? closeGmenu() : openGmenu(b); return; }
     closeGmenu(); setPage(b.dataset.page);
   });
-  // Games drop-down: html games / gba games / cloud gaming
+  // Games drop-down: html games / gba games / ported games / 4games / cloud gaming
   const gmenu = $('#gmenu');
   const gmenuOpen = () => gmenu.classList.contains('open');
   function openGmenu(btn) {
@@ -1710,7 +1710,15 @@ export default {
     btn.setAttribute('aria-expanded', 'true');
   }
   function closeGmenu() { gmenu.classList.remove('open'); const b = $('#pagenav .pn[data-drop]'); if (b) b.setAttribute('aria-expanded', 'false'); }
-  gmenu.addEventListener('click', (e) => { const b = e.target.closest('[data-gm]'); if (!b) return; closeGmenu(); setPage(b.dataset.gm); });
+  gmenu.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-gm]');
+    if (!b) return;
+    closeGmenu();
+    // These two load through the proxy (same path as an App shortcut), not in the games frame.
+    if (b.dataset.gm === 'ported') { openApp(PORTED_URL); return; }
+    if (b.dataset.gm === '4games') { openApp(FOURGAMES_URL); return; }
+    setPage(b.dataset.gm);
+  });
   document.addEventListener('click', (e) => { if (gmenuOpen() && !e.target.closest('#gmenu')) closeGmenu(); });
 
   /* ───────── Games: your games site, framed ─────────
@@ -1720,6 +1728,8 @@ export default {
        which sidesteps X-Frame-Options / frame-ancestors if the host ever adds them.            */
   const GAMES_URL = 'https://levelzproxy.github.io/test/';
   const GBA_URL = 'https://gba-sfum.vercel.app/';
+  const PORTED_URL = 'https://levelzproxy.github.io/ported/';
+  const FOURGAMES_URL = 'https://levelzproxy.github.io/mathassignments/';
   const AI_URL = 'https://waveyai.onrender.com/';
   const GAMES_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-pointer-lock allow-presentation';
   let gamesCur = '', gamesTimer = 0;
