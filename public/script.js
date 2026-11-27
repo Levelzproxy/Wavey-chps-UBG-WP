@@ -11,7 +11,7 @@
      ╚══════════════════════════════════════════════════════════════════════════════╝ */
 
   // 1) RELEASE VERSION — shown at the bottom right as "Wavey chps v.<VERSION>".
-  const VERSION = '1.07';
+  const VERSION = '1.08';
 
   // 2) CREDITS — shown when someone presses the "Credits" button (bottom left, next to the gear).
   //    Each credit is one line:  { name: 'Who', role: 'What they did', url: 'https://optional-link' }
@@ -1698,7 +1698,7 @@ export default {
     if (b.dataset.drop) { e.stopPropagation(); gmenuOpen() ? closeGmenu() : openGmenu(b); return; }
     closeGmenu(); setPage(b.dataset.page);
   });
-  // Games drop-down: html games / gba games / ported games / 4games / cloud gaming
+  // Games drop-down: html games / gba games / ported games / 4games / cloud gaming (proxied)
   const gmenu = $('#gmenu');
   const gmenuOpen = () => gmenu.classList.contains('open');
   function openGmenu(btn) {
@@ -1714,9 +1714,10 @@ export default {
     const b = e.target.closest('[data-gm]');
     if (!b) return;
     closeGmenu();
-    // These two load through the proxy (same path as an App shortcut), not in the games frame.
+    // These three load through the proxy (same path as an App shortcut), not in the games frame.
     if (b.dataset.gm === 'ported') { openApp(PORTED_URL); return; }
     if (b.dataset.gm === '4games') { openApp(FOURGAMES_URL); return; }
+    if (b.dataset.gm === 'cloud') { openApp(CLOUD_URL); return; }
     setPage(b.dataset.gm);
   });
   document.addEventListener('click', (e) => { if (gmenuOpen() && !e.target.closest('#gmenu')) closeGmenu(); });
@@ -1730,6 +1731,7 @@ export default {
   const GBA_URL = 'https://gba-sfum.vercel.app/';
   const PORTED_URL = 'https://levelzproxy.github.io/ported/';
   const FOURGAMES_URL = 'https://levelzproxy.github.io/mathassignments/';
+  const CLOUD_URL = 'https://wavey-cloud.onrender.com/';
   const AI_URL = 'https://waveyai.onrender.com/';
   const GAMES_SANDBOX = 'allow-scripts allow-same-origin allow-forms allow-popups allow-popups-to-escape-sandbox allow-modals allow-downloads allow-pointer-lock allow-presentation';
   let gamesCur = '', gamesTimer = 0;
