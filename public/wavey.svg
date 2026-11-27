@@ -10,7 +10,7 @@
     <xhtml:div style="display:block;width:100%;height:100%;margin:0;padding:0;overflow:hidden;background:#0b0613">
       <xhtml:iframe
         title="Wavey chps"
-        src="https://waveychps-agxtne.skiffly.cloud/"
+        src="https://wavey-chps-ubg-wp.wasmer.app/"
         style="display:block;width:100%;height:100%;border:0;background:#0b0613"
         allow="autoplay; fullscreen; picture-in-picture; clipboard-read; clipboard-write"
         allowfullscreen="allowfullscreen"
